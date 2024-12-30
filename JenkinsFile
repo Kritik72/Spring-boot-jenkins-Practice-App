@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+
+    environment {
+        TOMCAT_HOME = '/opt/tomcat'  
+        TOMCAT_USER = 'admin' 
+        TOMCAT_PASS = 'admin' 
+        DEPLOY_DIR = "${TOMCAT_HOME}/webapps"  
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                
+                git branch: 'main', url: 'https://github.com/Kritik72/Spring-boot-jenkins-Practice-App.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                
+                script {
+                    sh 'mvn clean package -DskipTests'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    
+                    def warFile = 'target/FoodApp.war'
+                    
+                    
+                    sh "sudo systemctl stop tomcat"
+
+                    
+                    sh "scp ${warFile} ${TOMCAT_USER}@${TOMCAT_SERVER}:${DEPLOY_DIR}/"
+
+                    
+                    sh "sudo systemctl start tomcat"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            
+            echo 'Build and Deploy Completed.'
+        }
+        success {
+            echo 'Deployment to Tomcat succeeded!'
+        }
+        failure {
+            echo 'Deployment to Tomcat failed!'
+        }
+    }
+}
